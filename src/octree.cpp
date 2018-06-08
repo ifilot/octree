@@ -25,11 +25,27 @@
  #                                                                                  #
  #***********************************************************************************/
 
+/*
+ * Octree implementation based on the following article:
+ *    Neighbor Finding in Images Represented by Octrees
+ *    Hanan Samet
+ *    Computer vision, graphics, and image processing 46, 367-386 (1989)
+ *    DOI: https://doi.org/10.1016/0734-189X(89)90038-8
+ */
+
 #include "octree.h"
 
 #ifndef _OCTREE_IMPL
 #define _OCTREE_IMPL
 
+/**
+ * @brief      Octree constructor
+ *
+ * @param[in]  _px     width of principal cell
+ * @param[in]  _py     breadth of principal cell
+ * @param[in]  _pz     height of principal cell
+ *
+ */
 template <class T>
 Octree<T>::Octree(double _x, double _y, double _z) :
     cx(_x/2),
@@ -45,11 +61,32 @@ Octree<T>::Octree(double _x, double _y, double _z) :
                                    0);
 }
 
+/**
+ * @brief      add object to the tree
+ *
+ * @param      object  pointer to object
+ * @param[in]  _px     x position
+ * @param[in]  _py     y position
+ * @param[in]  _pz     z position
+ *
+ */
 template <class T>
 void Octree<T>::add(T* object, double _px, double _py, double _pz) {
     this->root->find_node(_px, _py, _pz)->add(object, _px, _py, _pz);
 }
 
+/**
+ * @brief      Constructs the object.
+ *
+ * @param      _parent  pointer to parent
+ * @param[in]  _cx      center position x
+ * @param[in]  _cy      center position y
+ * @param[in]  _cz      center position z
+ * @param[in]  _x       width of the cell
+ * @param[in]  _y       breadth of the cell
+ * @param[in]  _z       height of the cell
+ * @param[in]  _level   The level
+ */
 template <class T>
 OctreeNode<T>::OctreeNode(OctreeNode* _parent,
                           double _cx, double _cy, double _cz,
@@ -68,9 +105,11 @@ OctreeNode<T>::OctreeNode(OctreeNode* _parent,
     this->objects.reserve(16);
 }
 
+/**
+ * @brief      split the cell into 8 octants
+ */
 template <class T>
 void OctreeNode<T>::split() {
-    std::cout << "Split at level: " << this->level << std::endl;
     if(this->children[0] != nullptr) {
         return;
     }
@@ -101,6 +140,14 @@ void OctreeNode<T>::split() {
     this->pos.clear();
 }
 
+/**
+ * @brief      add object to node
+ *
+ * @param      object  pointer to object
+ * @param[in]  _px     object position x
+ * @param[in]  _py     object position y
+ * @param[in]  _pz     object position z
+ */
 template <class T>
 void OctreeNode<T>::add(T* object, double _px, double _py, double _pz) {
     if(this->leaf) {
@@ -115,20 +162,11 @@ void OctreeNode<T>::add(T* object, double _px, double _py, double _pz) {
     }
 }
 
-template <class T>
-void OctreeNode<T>::print() {
-    for(unsigned int j=0; j<this->level; j++) {
-        std::cout << "\t";
-    }
-    std::cout << "(" << this->level << ") " << this->cx << "  " << this->cy << "  " << this->cz << "  " << this->get_type() << "  " << this << std::endl;
-
-    if(!this->leaf) {
-        for(unsigned int i=0; i<8; i++) {
-            this->children[i]->print();
-        }
-    }
-}
-
+/**
+ * @brief      get the octant type
+ *
+ * @return     octant type
+ */
 template <class T>
 unsigned int OctreeNode<T>::get_type() const {
     if(this->get_parent() == nullptr) {
@@ -142,6 +180,15 @@ unsigned int OctreeNode<T>::get_type() const {
     }
 }
 
+/**
+ * @brief      find node given position
+ *
+ * @param[in]  _px   position x
+ * @param[in]  _py   position y
+ * @param[in]  _pz   position z
+ *
+ * @return     pointer to node
+ */
 template <class T>
 OctreeNode<T>* OctreeNode<T>::find_node(double _px, double _py, double _pz) {
     if(this->leaf) {
@@ -179,6 +226,11 @@ OctreeNode<T>* OctreeNode<T>::find_node(double _px, double _py, double _pz) {
     }
 }
 
+/**
+ * @brief      find neighbors
+ *
+ * @return     vector holding pointers to neighbor nodes
+ */
 template <class T>
 std::vector<OctreeNode<T>*> OctreeNode<T>::find_neighbors() const {
     std::unordered_set<OctreeNode<T>*> neighbors;
@@ -212,6 +264,13 @@ std::vector<OctreeNode<T>*> OctreeNode<T>::find_neighbors() const {
     return std::vector<OctreeNode<T>*>(neighbors.begin(), neighbors.end());
 }
 
+/**
+ * @brief      find face neighbor (equal or larger in size) in direction i
+ *
+ * @param[in]  i     direction i
+ *
+ * @return     pointer to face neighbor
+ */
 template <class T>
 OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_face(unsigned int i) const {
     OctreeNode<T>* q;
@@ -230,6 +289,13 @@ OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_face(unsigned int i) const {
     }
 }
 
+/**
+ * @brief      find edge neighbor (equal or larger in size) in direction i
+ *
+ * @param[in]  i     direction i
+ *
+ * @return     pointer to edge neighbor
+ */
 template <class T>
 OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_edge(unsigned int i) const {
     OctreeNode<T>* q;
@@ -252,6 +318,13 @@ OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_edge(unsigned int i) const {
     }
 }
 
+/**
+ * @brief      find vertex neighbor (equal or larger in size) in direction i
+ *
+ * @param[in]  i     direction i
+ *
+ * @return     pointer to vertex neighbor
+ */
 template <class T>
 OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_vertex(unsigned int i) const {
     OctreeNode<T>* q;
@@ -276,6 +349,26 @@ OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_vertex(unsigned int i) const {
     }
 }
 
+/**
+ * @brief      print the tree
+ */
+template <class T>
+void OctreeNode<T>::print() {
+    for(unsigned int j=0; j<this->level; j++) {
+        std::cout << "\t";
+    }
+    std::cout << "(" << this->level << ") " << this->cx << "  " << this->cy << "  " << this->cz << "  " << this->get_type() << "  " << this << std::endl;
+
+    if(!this->leaf) {
+        for(unsigned int i=0; i<8; i++) {
+            this->children[i]->print();
+        }
+    }
+}
+
+/**
+ * @brief      Destroys the object.
+ */
 template <class T>
 OctreeNode<T>::~OctreeNode() {
     if(!this->leaf) {
@@ -283,6 +376,14 @@ OctreeNode<T>::~OctreeNode() {
     }
 }
 
+/**
+ * @brief      check if octant is adjacent to direction
+ *
+ * @param[in]  i     direction
+ * @param[in]  o     octant
+ *
+ * @return     true if adjacent, false otherwise
+ */
 template <class T>
 bool OctreeNode<T>::adj(unsigned int i, unsigned int o) const {
     static const bool table[26][8] = {
@@ -317,6 +418,14 @@ bool OctreeNode<T>::adj(unsigned int i, unsigned int o) const {
     return table[i][o];
 }
 
+/**
+ * @brief      determines neighboring octant label in direction i
+ *
+ * @param[in]  i     direction
+ * @param[in]  o     octant
+ *
+ * @return     octant label
+ */
 template <class T>
 unsigned int OctreeNode<T>::reflect(unsigned int i, unsigned int o) const {
     static const unsigned int table[28][8] = {
@@ -351,6 +460,14 @@ unsigned int OctreeNode<T>::reflect(unsigned int i, unsigned int o) const {
     return table[i][o];
 }
 
+/**
+ * @brief      determines label of face common to o and neighboring node in direction i
+ *
+ * @param[in]  i     direction
+ * @param[in]  o     octant
+ *
+ * @return     face label
+ */
 template <class T>
 unsigned int OctreeNode<T>::common_face(unsigned int i, unsigned int o) const {
     static const unsigned int table[20][8] = {
@@ -379,6 +496,15 @@ unsigned int OctreeNode<T>::common_face(unsigned int i, unsigned int o) const {
     return table[i-6][o];
 }
 
+/**
+ * @brief      determines label of edge common to o and neighboring node in
+ *             direction i
+ *
+ * @param[in]  i     direction
+ * @param[in]  o     octant
+ *
+ * @return     edge label
+ */
 template <class T>
 unsigned int OctreeNode<T>::common_edge(unsigned int i, unsigned int o) const {
     static const unsigned int table[8][8] = {
