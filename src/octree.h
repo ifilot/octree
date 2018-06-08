@@ -82,6 +82,8 @@ public:
 
     OctreeNode* find_gteq_neighbor_face(unsigned int i) const;
 
+    OctreeNode* find_gteq_neighbor_edge(unsigned int i) const;
+
     ~OctreeNode();
 
     // getters
@@ -105,6 +107,8 @@ private:
     bool adj(unsigned int i, unsigned int o) const;
 
     unsigned int reflect(unsigned int i, unsigned int o) const;
+
+    unsigned int common_face(unsigned int i, unsigned int o) const;
 };
 
 template <class T>

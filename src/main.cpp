@@ -49,9 +49,14 @@ int main() {
     std::cout << nd->get_cx() << "  " << nd->get_cy() << "  " << nd->get_cz() << std::endl;
     std::cout << nd->get_type() << std::endl;
 
-    auto nd2 = nd->find_gteq_neighbor_face(OT_D_L);
-    std::cout << nd2->get_cx() << "  " << nd2->get_cy() << "  " << nd2->get_cz() << std::endl;
-    std::cout << nd2->get_type() << std::endl;
+    auto nd2 = nd->find_gteq_neighbor_edge(OT_D_UB);
+    if(nd2 != nullptr) {
+        std::cout << nd2->get_cx() << "  " << nd2->get_cy() << "  " << nd2->get_cz() << std::endl;
+        std::cout << nd2->get_type() << std::endl;
+    } else {
+        std::cout << "Cell boundary" << std::endl;
+    }
+
 
     std::cout << "Done" << std::endl;
 

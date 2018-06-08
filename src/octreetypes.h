@@ -66,7 +66,8 @@ enum {
     OT_D_RDB,
     OT_D_RDF,
     OT_D_RUB,
-    OT_D_RUF
+    OT_D_RUF,
+    OT_D_UNKNOWN
 };
 
 #endif // _OCTREETYPES_H

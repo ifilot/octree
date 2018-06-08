@@ -194,10 +194,32 @@ OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_face(unsigned int i) const {
     OctreeNode<T>* q;
     const unsigned int type = this->get_type();
 
-    if(this->get_parent() != nullptr && this->adj(i, type)) {
-        q = this->get_parent()->find_gteq_neighbor_face(i);
+    if(this->parent != nullptr && this->adj(i, type)) {
+        q = this->parent->find_gteq_neighbor_face(i);
     } else {
-        q = this->get_parent();
+        q = this->parent;
+    }
+
+    if(q != nullptr && !q->is_leaf()) {
+        return q->get_child(this->reflect(i, type));
+    } else {
+        return q;
+    }
+}
+
+template <class T>
+OctreeNode<T>* OctreeNode<T>::find_gteq_neighbor_edge(unsigned int i) const {
+    OctreeNode<T>* q;
+    const unsigned int type = this->get_type();
+
+    if(this->parent == nullptr) {
+        q = nullptr;
+    } else if(this->adj(i, type)) {
+        q = this->parent->find_gteq_neighbor_edge(i);
+    } else if(this->common_face(i, type) != OT_D_UNKNOWN) {
+        q = this->parent->find_gteq_neighbor_face(this->common_face(i, type));
+    } else {
+        q = parent;
     }
 
     if(q != nullptr && !q->is_leaf()) {
@@ -216,13 +238,25 @@ OctreeNode<T>::~OctreeNode() {
 
 template <class T>
 bool OctreeNode<T>::adj(unsigned int i, unsigned int o) const {
-    static const bool table[6][8] = {
+    static const bool table[18][8] = {
         {1,1,1,1,0,0,0,0},
         {0,0,0,0,1,1,1,1},
         {1,1,0,0,1,1,0,0},
         {0,0,1,1,0,0,1,1},
         {1,0,1,0,1,0,1,0},
-        {0,1,0,1,0,1,0,1}
+        {0,1,0,1,0,1,0,1},
+        {1,1,0,0,0,0,0,0},
+        {0,0,1,1,0,0,0,0},
+        {1,0,1,0,0,0,0,0},
+        {0,1,0,1,0,0,0,0},
+        {0,0,0,0,1,1,0,0},
+        {0,0,0,0,0,0,1,1},
+        {0,0,0,0,1,0,1,0},
+        {0,0,0,0,0,1,0,1},
+        {1,0,0,0,1,0,0,0},
+        {0,1,0,0,0,1,0,0},
+        {0,0,1,0,0,0,1,0},
+        {0,0,0,1,0,0,0,1}
     };
 
     return table[i][o];
@@ -230,16 +264,48 @@ bool OctreeNode<T>::adj(unsigned int i, unsigned int o) const {
 
 template <class T>
 unsigned int OctreeNode<T>::reflect(unsigned int i, unsigned int o) const {
-    static const unsigned int table[6][8] = {
-        {OT_RDB, OT_RDF, OT_RUB, OT_RUF, OT_LDB, OT_LDF, OT_LUB, OT_LUF},
-        {OT_RDB, OT_RDF, OT_RUB, OT_RUF, OT_LDB, OT_LDF, OT_LUB, OT_LUF},
-        {OT_LUB, OT_LUF, OT_LDB, OT_LDF, OT_RUB, OT_RUF, OT_RDB, OT_RDF},
-        {OT_LUB, OT_LUF, OT_LDB, OT_LDF, OT_RUB, OT_RUF, OT_RDB, OT_RDF},
-        {OT_LDF, OT_LDB, OT_LUF, OT_LUB, OT_RDF, OT_RDB, OT_RUF, OT_RUB},
-        {OT_LDF, OT_LDB, OT_LUF, OT_LUB, OT_RDF, OT_RDB, OT_RUF, OT_RUB}
+    static const unsigned int table[20][8] = {
+        {OT_RDB, OT_RDF, OT_RUB, OT_RUF, OT_LDB, OT_LDF, OT_LUB, OT_LUF}, // L
+        {OT_RDB, OT_RDF, OT_RUB, OT_RUF, OT_LDB, OT_LDF, OT_LUB, OT_LUF}, // R
+        {OT_LUB, OT_LUF, OT_LDB, OT_LDF, OT_RUB, OT_RUF, OT_RDB, OT_RDF}, // D
+        {OT_LUB, OT_LUF, OT_LDB, OT_LDF, OT_RUB, OT_RUF, OT_RDB, OT_RDF}, // U
+        {OT_LDF, OT_LDB, OT_LUF, OT_LUB, OT_RDF, OT_RDB, OT_RUF, OT_RUB}, // B
+        {OT_LDF, OT_LDB, OT_LUF, OT_LUB, OT_RDF, OT_RDB, OT_RUF, OT_RUB}, // F
+        {OT_RUB, OT_RUF, OT_RDB, OT_RDF, OT_LUB, OT_LUF, OT_LDB, OT_LDF}, // LD
+        {OT_RUB, OT_RUF, OT_RDB, OT_RDF, OT_LUB, OT_LUF, OT_LDB, OT_LDF}, // LU
+        {OT_RDF, OT_RDB, OT_RUF, OT_RUB, OT_LDF, OT_LDB, OT_LUF, OT_LUB}, // LB
+        {OT_RDF, OT_RDB, OT_RUF, OT_RUB, OT_LDF, OT_LDB, OT_LUF, OT_LUB}, // LF
+        {OT_RUB, OT_RUF, OT_RDB, OT_RDF, OT_LUB, OT_LUF, OT_LDB, OT_LDF}, // RD
+        {OT_RUB, OT_RUF, OT_RDB, OT_RDF, OT_LUB, OT_LUF, OT_LDB, OT_LDF}, // RU
+        {OT_RDF, OT_RDB, OT_RUF, OT_RUB, OT_LDF, OT_LDB, OT_LUF, OT_LUB}, // RB
+        {OT_RDF, OT_RDB, OT_RUF, OT_RUB, OT_LDF, OT_LDB, OT_LUF, OT_LUB}, // RF
+        {OT_LUF, OT_LUB, OT_LDF, OT_LDB, OT_RUF, OT_RUB, OT_RDF, OT_RDB}, // DB
+        {OT_LUF, OT_LUB, OT_LDF, OT_LDB, OT_RUF, OT_RUB, OT_RDF, OT_RDB}, // DF
+        {OT_LUF, OT_LUB, OT_LDF, OT_LDB, OT_RUF, OT_RUB, OT_RDF, OT_RDB}, // UB
+        {OT_LUF, OT_LUB, OT_LDF, OT_LDB, OT_RUF, OT_RUB, OT_RDF, OT_RDB}  // UF
     };
 
     return table[i][o];
+}
+
+template <class T>
+unsigned int OctreeNode<T>::common_face(unsigned int i, unsigned int o) const {
+    static const unsigned int table[12][8] = {
+        {OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_L, OT_D_L, OT_D_D, OT_D_D, OT_D_UNKNOWN, OT_D_UNKNOWN}, // LD
+        {OT_D_L, OT_D_L, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_U, OT_D_U}, // LU
+        {OT_D_UNKNOWN, OT_D_L, OT_D_UNKNOWN, OT_D_L, OT_D_B, OT_D_UNKNOWN, OT_D_B, OT_D_UNKNOWN}, // LB
+        {OT_D_L, OT_D_UNKNOWN, OT_D_L, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_F, OT_D_UNKNOWN, OT_D_F}, // LF
+        {OT_D_D, OT_D_D, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_R, OT_D_R}, // RD
+        {OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_U, OT_D_U, OT_D_R, OT_D_R, OT_D_UNKNOWN, OT_D_UNKNOWN}, // RU
+        {OT_D_B, OT_D_UNKNOWN, OT_D_B, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_R, OT_D_UNKNOWN, OT_D_R}, // RB
+        {OT_D_UNKNOWN, OT_D_F, OT_D_UNKNOWN, OT_D_F, OT_D_R, OT_D_UNKNOWN, OT_D_R, OT_D_UNKNOWN}, // RF
+        {OT_D_UNKNOWN, OT_D_D, OT_D_B, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_D, OT_D_B, OT_D_UNKNOWN}, // DB
+        {OT_D_D, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_F, OT_D_D, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_F}, // DF
+        {OT_D_B, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_U, OT_D_B, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_U}, // UB
+        {OT_D_UNKNOWN, OT_D_F, OT_D_U, OT_D_UNKNOWN, OT_D_UNKNOWN, OT_D_F, OT_D_U, OT_D_UNKNOWN}  // UF
+    };
+
+    return table[i-6][o];
 }
 
 #endif // _OCTREE_IMPL
