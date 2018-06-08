@@ -30,6 +30,7 @@
 
 #include <vector>
 #include <iostream>
+#include <unordered_set>
 
 #include "octreetypes.h"
 
@@ -78,11 +79,13 @@ public:
 
     OctreeNode* find_node(double _px, double _py, double _pz);
 
-    OctreeNode* find_eq_neighbor_face(unsigned int i) const;
+    std::vector<OctreeNode*> find_neighbors() const;
 
     OctreeNode* find_gteq_neighbor_face(unsigned int i) const;
 
     OctreeNode* find_gteq_neighbor_edge(unsigned int i) const;
+
+    OctreeNode* find_gteq_neighbor_vertex(unsigned int i) const;
 
     ~OctreeNode();
 
@@ -103,12 +106,18 @@ public:
         return this->leaf;
     }
 
+    inline const std::vector<T*>& get_objects() const {
+        return this->objects;
+    }
+
 private:
     bool adj(unsigned int i, unsigned int o) const;
 
     unsigned int reflect(unsigned int i, unsigned int o) const;
 
     unsigned int common_face(unsigned int i, unsigned int o) const;
+
+    unsigned int common_edge(unsigned int i, unsigned int o) const;
 };
 
 template <class T>
